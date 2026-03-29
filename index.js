@@ -1,14 +1,13 @@
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { plugin: collectBlock } = require('mineflayer-collectblock');
-const viewer = require('prismarine-viewer').mineflayer;
 
 // ---------------- CONFIGURATION ----------------
 const config = {
     host: 'fff1-ok5w.aternos.me', 
     port: 41853, 
     username: 'AFK_Bot', 
-    version: false 
+    version: false // Auto-detect the exact server version
 };
 // -----------------------------------------------
 
@@ -37,10 +36,22 @@ function createBot() {
     bot.once('spawn', () => {
         homePoint = bot.entity.position.clone();
         
-        // START LIVE 3D VIEWER (DASHBOARD)
+        // START LIVE 3D DASHBOARD (Prismarine Viewer)
         const viewerPort = process.env.PORT || 3000;
-        console.log(`[VIEWER] Starting Live 3D Dashboard on port ${viewerPort}...`);
-        viewer(bot, { port: viewerPort, firstPerson: true });
+        console.log(`[VIEWER] Starting Optimized Live Dashboard on port ${viewerPort}...`);
+        
+        try {
+            const viewer = require('prismarine-viewer').mineflayer;
+            viewer(bot, { 
+                port: viewerPort, 
+                firstPerson: true,
+                viewDistance: 4, // Optimized distance to fix lag while showing the farm
+                prefix: 'viewer' 
+            });
+            console.log(`[VIEWER] Smooth Live View Active! Visit your URL to see the world.`);
+        } catch (err) {
+            console.log(`[VIEWER] Warning: Live View disabled locally (requires Windows build tools). It will auto-activate on Railway!`);
+        }
 
         // Human Simulation
         setTimeout(() => {
@@ -90,7 +101,7 @@ function startRealisticHumanAI(bot) {
             });
 
             if (ripeWheat) {
-                console.log(`[DASHBOARD/ACTION] Harvesting wheat at ${ripeWheat.position}...`);
+                console.log(`[DASHBOARD] Harvesting ripe wheat at ${ripeWheat.position}...`);
                 await bot.collectBlock.collect(ripeWheat);
                 
                 const seeds = bot.inventory.items().find(i => i.type === seedsId);
@@ -111,7 +122,7 @@ function startRealisticHumanAI(bot) {
                 });
 
                 if (woodBlock) {
-                    console.log(`[DASHBOARD/ACTION] Found wood. Walking to mine...`);
+                    console.log(`[DASHBOARD] Mining tree logs...`);
                     await bot.collectBlock.collect(woodBlock);
                 } else {
                     wander(bot, 20);
@@ -127,6 +138,7 @@ function startRealisticHumanAI(bot) {
                 });
 
                 if (storageChest) {
+                    console.log('[DASHBOARD] Depositing items into chest...');
                     await bot.pathfinder.goto(new goals.GoalGetToBlock(storageChest.position.x, storageChest.position.y, storageChest.position.z));
                     const chest = await bot.openChest(storageChest);
                     for (const item of inventoryItems) {
@@ -138,7 +150,7 @@ function startRealisticHumanAI(bot) {
 
         } catch (err) { }
 
-        setTimeout(cycle, 2000 + Math.random() * 3000);
+        setTimeout(cycle, 1500 + Math.random() * 2000);
     }
 
     cycle();
@@ -150,6 +162,7 @@ function wander(bot, radius) {
     const z = homePoint.z + (Math.random() - 0.5) * radius * 2;
     const goal = new goals.GoalNear(x, bot.entity.position.y, z, 2);
     bot.pathfinder.setGoal(goal);
+    // console.log(`[DASHBOARD] Searching for new areas (Radius: ${radius})...`);
 }
 
 createBot();
