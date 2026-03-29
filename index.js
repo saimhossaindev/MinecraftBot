@@ -45,8 +45,8 @@ function createBot() {
             viewer(bot, { 
                 port: viewerPort, 
                 firstPerson: true,
-                viewDistance: 4, // Optimized distance to fix lag while showing the farm
-                prefix: 'viewer' 
+                viewDistance: 4, 
+                prefix: '' // Serves the dashboard at the root URL (e.g., http://localhost:3000)
             });
             console.log(`[VIEWER] Smooth Live View Active! Visit your URL to see the world.`);
         } catch (err) {
