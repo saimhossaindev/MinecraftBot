@@ -1,13 +1,14 @@
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { plugin: collectBlock } = require('mineflayer-collectblock');
+const viewer = require('prismarine-viewer').mineflayer;
 
 // ---------------- CONFIGURATION ----------------
 const config = {
     host: 'fff1-ok5w.aternos.me', 
     port: 41853, 
     username: 'AFK_Bot', 
-    version: false // Auto-detect the exact server version
+    version: false 
 };
 // -----------------------------------------------
 
@@ -35,7 +36,13 @@ function createBot() {
 
     bot.once('spawn', () => {
         homePoint = bot.entity.position.clone();
-        // Human Simulation: Brief delay before starting work
+        
+        // START LIVE 3D VIEWER (DASHBOARD)
+        const viewerPort = process.env.PORT || 3000;
+        console.log(`[VIEWER] Starting Live 3D Dashboard on port ${viewerPort}...`);
+        viewer(bot, { port: viewerPort, firstPerson: true });
+
+        // Human Simulation
         setTimeout(() => {
             console.log('[BOT] Starting High-Speed Autonomous Farmer & Gatherer AI.');
             startRealisticHumanAI(bot);
@@ -53,7 +60,6 @@ function createBot() {
     bot.on('end', () => {
         console.log(`[BOT] Disconnected!`);
         const breakTime = 15000 + Math.random() * 20000;
-        console.log(`[BOT] Rejoining in ${Math.round(breakTime/1000)} seconds...`);
         setTimeout(createBot, breakTime); 
     });
 }
@@ -77,21 +83,18 @@ function startRealisticHumanAI(bot) {
         if (!bot || !bot.entity) return;
 
         try {
-            // STEP 1: FARMING (Harvest fully grown wheat)
-            console.log('[BOT] Checking for fully grown wheat (Age 7)...');
+            // STEP 1: FARMING
             const ripeWheat = bot.findBlock({
                 matching: (block) => block.type === wheatId && block.metadata === 7,
                 maxDistance: 16
             });
 
             if (ripeWheat) {
-                console.log(`[BOT] Harvesting wheat at ${ripeWheat.position}...`);
+                console.log(`[DASHBOARD/ACTION] Harvesting wheat at ${ripeWheat.position}...`);
                 await bot.collectBlock.collect(ripeWheat);
                 
-                // REPLANT IMMEDIATELY
                 const seeds = bot.inventory.items().find(i => i.type === seedsId);
                 if (seeds) {
-                    console.log(`[BOT] Replanting seeds...`);
                     const farmland = bot.blockAt(ripeWheat.position.offset(0, -1, 0));
                     if (farmland && farmland.name === 'farmland') {
                         await bot.equip(seeds, 'hand');
@@ -100,26 +103,24 @@ function startRealisticHumanAI(bot) {
                 }
             }
 
-            // STEP 2: WOOD GATHERING (If no wheat, search for trees)
+            // STEP 2: WOOD GATHERING
             else {
-                console.log('[BOT] No ripe wheat. Scanning for wood logs...');
                 const woodBlock = bot.findBlock({
                     matching: woodBlocks,
                     maxDistance: 24
                 });
 
                 if (woodBlock) {
-                    console.log(`[BOT] Found wood at ${woodBlock.position}. Mining...`);
+                    console.log(`[DASHBOARD/ACTION] Found wood. Walking to mine...`);
                     await bot.collectBlock.collect(woodBlock);
                 } else {
                     wander(bot, 20);
                 }
             }
 
-            // STEP 3: STORAGE (Deposit wheat/wood into chest)
+            // STEP 3: STORAGE
             const inventoryItems = bot.inventory.items().filter(i => i.name === 'wheat' || i.name.includes('log'));
             if (inventoryItems.length > 0) {
-                console.log('[BOT] Searching for nearby chest to deposit items...');
                 const storageChest = bot.findBlock({
                     matching: chestId,
                     maxDistance: 32
@@ -129,18 +130,14 @@ function startRealisticHumanAI(bot) {
                     await bot.pathfinder.goto(new goals.GoalGetToBlock(storageChest.position.x, storageChest.position.y, storageChest.position.z));
                     const chest = await bot.openChest(storageChest);
                     for (const item of inventoryItems) {
-                        console.log(`[BOT] Depositing ${item.name} into chest...`);
                         await chest.deposit(item.type, null, item.count);
                     }
                     chest.close();
                 }
             }
 
-        } catch (err) {
-            console.log(`[BOT] Cycle action failed (Obstacle/Distance). Retrying...`);
-        }
+        } catch (err) { }
 
-        // Fast Cycle Delay (2-5 seconds)
         setTimeout(cycle, 2000 + Math.random() * 3000);
     }
 
@@ -153,7 +150,6 @@ function wander(bot, radius) {
     const z = homePoint.z + (Math.random() - 0.5) * radius * 2;
     const goal = new goals.GoalNear(x, bot.entity.position.y, z, 2);
     bot.pathfinder.setGoal(goal);
-    console.log(`[BOT] Exploring (Radius: ${radius})...`);
 }
 
 createBot();
