@@ -2,6 +2,7 @@ const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { plugin: collectBlock } = require('mineflayer-collectblock');
 
+
 const config = {
     host: 'fff1-ok5w.aternos.me', 
     port: 41853, 
