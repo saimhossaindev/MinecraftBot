@@ -6,7 +6,7 @@ const { plugin: collectBlock } = require('mineflayer-collectblock');
 const config = {
     host: 'fff1-ok5w.aternos.me', 
     port: 41853, 
-    username: 'AFK_Bot', 
+    username: 'Sam_Bot', 
     version: false 
 };
 
